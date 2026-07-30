@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -14,33 +15,82 @@ const posts = (await getCollection('blog')).sort(
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`Blog | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
 		<Header />
 		<main class="container">
-			<h1 class="page-title"><span class="terminal-symbol">&gt;</span> ARCHIVED LOGS</h1>
-			<p class="subtitle">记录所有的技术沉淀与系统实践工程日志。</p>
+			<!-- ============ HERO：终端会话 ============ -->
+			<section class="hero fade-up">
+				<div class="term-window">
+					<div class="term-bar">
+						<span class="term-dots"><i></i><i></i><i></i></span>
+						<span class="term-path">cyril@log: ~ — zsh — 80×24</span>
+					</div>
+					<div class="term-body hero-body">
+						<p class="line"><span class="prompt">cyril@log:~$</span> <span class="cmd">whoami</span></p>
+						<h1 class="hero-name">
+							<span class="text-green glow">Cyril</span>
+							<span class="hero-role">// 全栈开发 × 系统运维 × 网络工程</span>
+						</h1>
 
-			<section class="post-grid">
-				{
-					posts.map((post) => (
-						<article class="post-card">
-							<a href={`/blog/${post.slug}/`}>
-								{post.data.heroImage && (
-									<img width={720} height={360} src={post.data.heroImage} alt="" class="hero-img" />
-								)}
-								<div class="card-body">
-									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
-									</p>
-									<h2 class="title">{post.data.title}</h2>
-									{post.data.description && <p class="description">{post.data.description}</p>}
-								</div>
-							</a>
-						</article>
-					))
-				}
+						<p class="line"><span class="prompt">cyril@log:~$</span> <span class="cmd">cat mission.txt</span></p>
+						<p class="hero-desc">{SITE_DESCRIPTION}</p>
+
+						<p class="line"><span class="prompt">cyril@log:~$</span> <span class="cmd">stat --system</span></p>
+						<div class="stats">
+							<div class="stat">
+								<span class="stat-value text-green">{posts.length}</span>
+								<span class="stat-label">篇工程日志</span>
+							</div>
+							<div class="stat">
+								<span class="stat-value text-cyan">24/7</span>
+								<span class="stat-label">服务器在线</span>
+							</div>
+							<div class="stat">
+								<span class="stat-value text-amber">99.9%</span>
+								<span class="stat-label">可用性目标</span>
+							</div>
+						</div>
+
+						<p class="line"><span class="prompt">cyril@log:~$</span> <span class="cmd cursor">./explore.sh</span></p>
+						<div class="actions">
+							<a class="btn primary" href="/blog">cd ~/blog</a>
+							<a class="btn" href="/about">./about --me</a>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============ 最新日志 ============ -->
+			<section class="logs fade-up">
+				<h2 class="section-title">
+					<span class="prompt">cyril@log:~$</span> ls -lh ~/logs/ <span class="count">— {posts.length} file(s)</span>
+				</h2>
+
+				<div class="post-grid">
+					{
+						posts.map((post) => (
+							<article class="term-window post-card">
+								<a href={`/blog/${post.id}/`}>
+									<div class="term-bar">
+										<span class="term-dots"><i></i><i></i><i></i></span>
+										<span class="term-path">~/logs/{post.id}.md</span>
+									</div>
+									{post.data.heroImage && (
+										<Image width={720} height={360} src={post.data.heroImage} alt="" class="card-img" />
+									)}
+									<div class="term-body card-body">
+										<span class="card-date">[<FormattedDate date={post.data.pubDate} />]</span>
+										<h3 class="card-title">{post.data.title}</h3>
+										{post.data.description && <p class="card-desc">{post.data.description}</p>}
+										<span class="card-read">$ cat → 阅读全文</span>
+									</div>
+								</a>
+							</article>
+						))
+					}
+				</div>
 			</section>
 		</main>
 		<Footer />
@@ -49,68 +99,127 @@ const posts = (await getCollection('blog')).sort(
 
 <style>
 	.container {
-		max-width: 900px;
+		max-width: var(--max-width);
 		margin: 0 auto;
-		padding: 2rem 1rem;
+		padding: 2.5rem 1.25rem 0;
 	}
-	.page-title {
-		font-size: 1.8rem;
-		margin-bottom: 0.2rem;
+
+	/* ---------- HERO ---------- */
+	.hero {
+		margin-bottom: 4rem;
 	}
-	.terminal-symbol {
-		color: #58a6ff;
+
+	.hero-body {
+		padding: 2rem 1.8rem;
 	}
-	.subtitle {
-		color: #8b949e;
-		margin-bottom: 2rem;
-		border-bottom: 1px solid #30363d;
-		padding-bottom: 1rem;
+
+	.line {
+		margin: 0 0 0.4rem;
+		font-size: 0.88rem;
 	}
+
+	.prompt {
+		color: var(--green);
+		font-weight: 700;
+	}
+
+	.cmd {
+		color: var(--text-bright);
+	}
+
+	.hero-name {
+		font-size: clamp(1.9rem, 5vw, 2.8rem);
+		margin: 0.3rem 0 1.6rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.hero-role {
+		font-size: clamp(0.8rem, 2vw, 0.95rem);
+		font-weight: 400;
+		color: var(--text-dim);
+		letter-spacing: 0.06em;
+	}
+
+	.hero-desc {
+		color: var(--text-dim);
+		max-width: 46em;
+		margin: 0.3rem 0 1.6rem;
+		font-size: 0.9rem;
+	}
+
+	.stats {
+		display: flex;
+		gap: 2.5rem;
+		flex-wrap: wrap;
+		margin: 0.4rem 0 1.6rem;
+		padding: 1rem 1.2rem;
+		background: var(--bg-inset);
+		border: 1px dashed var(--border-bright);
+		border-radius: var(--radius);
+		width: fit-content;
+	}
+
+	.stat {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.stat-value {
+		font-size: 1.5rem;
+		font-weight: 700;
+		line-height: 1.2;
+	}
+
+	.stat-label {
+		font-size: 0.72rem;
+		color: var(--text-faint);
+		letter-spacing: 0.08em;
+	}
+
+	.actions {
+		display: flex;
+		gap: 0.9rem;
+		flex-wrap: wrap;
+		margin-top: 0.8rem;
+	}
+
+	/* ---------- 日志列表 ---------- */
+	.section-title {
+		font-size: 1.05rem;
+		font-weight: 400;
+		color: var(--text-bright);
+		margin: 0 0 1.6rem;
+		padding-bottom: 0.9rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.section-title .count {
+		color: var(--text-faint);
+		font-size: 0.8rem;
+	}
+
 	.post-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 1.5rem;
+		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		gap: 1.4rem;
 	}
-	.post-card {
-		background: #161b22;
-		border: 1px solid #30363d;
-		border-radius: 8px;
-		overflow: hidden;
-		transition: transform 0.2s, border-color 0.2s;
-	}
-	.post-card:hover {
-		transform: translateY(-3px);
-		border-color: #58a6ff;
-	}
-	.post-card a {
-		text-decoration: none;
-		color: inherit;
-		display: block;
-	}
-	.hero-img {
+
+	.card-img {
 		width: 100%;
-		height: 160px;
+		height: 150px;
 		object-fit: cover;
-		border-bottom: 1px solid #30363d;
+		border-bottom: 1px solid var(--border);
+		filter: saturate(0.85) brightness(0.9);
+		transition: filter 0.2s ease;
 	}
+
+	.post-card:hover .card-img {
+		filter: saturate(1.05) brightness(1);
+	}
+
 	.card-body {
-		padding: 1.2rem;
-	}
-	.date {
-		color: #3fb950;
-		font-size: 0.8rem;
-		margin: 0 0 0.5rem 0;
-	}
-	.title {
-		color: #f0f6fc;
-		font-size: 1.15rem;
-		margin: 0 0 0.5rem 0;
-		line-height: 1.4;
-	}
-	.description {
-		color: #8b949e;
-		font-size: 0.85rem;
-		margin: 0;
-		line-height: 1.5;
+		padding: 1.1rem 1.25rem 1.25rem;
 	}
 </style>
