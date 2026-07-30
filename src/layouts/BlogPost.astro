@@ -1,83 +1,46 @@
 ---
-import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
-import '../styles/global.css';
 import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
-import Header from '../components/Header.astro';
 
 type Props = CollectionEntry<'blog'>['data'];
 
 const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 ---
 
-<html lang="en">
+<!doctype html>
+<html lang="zh-CN">
 	<head>
 		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
 	</head>
 
 	<body>
 		<Header />
-		<main>
+		<main class="article-container">
 			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
+				<header class="article-header">
+					<div class="meta">
+						<span class="prompt">cyril@log:~$</span> cat post.md
+						<div class="date-tag">
 							<FormattedDate date={pubDate} />
 							{
 								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
+									<span class="last-updated">
+										(Updated: <FormattedDate date={updatedDate} />)
+									</span>
 								)
 							}
 						</div>
-						<h1>{title}</h1>
-						<hr />
 					</div>
+					<h1 class="title">{title}</h1>
+					{description && <p class="description">{description}</p>}
+				</header>
+
+				{heroImage && <div class="hero-image"><img width={1020} height={510} src={heroImage} alt="" /></div>}
+
+				<div class="markdown-body">
 					<slot />
 				</div>
 			</article>
@@ -85,3 +48,78 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 		<Footer />
 	</body>
 </html>
+
+<style>
+	.article-container {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem 1rem;
+	}
+	.article-header {
+		margin-bottom: 2rem;
+		border-bottom: 1px solid #30363d;
+		padding-bottom: 1.5rem;
+	}
+	.meta {
+		color: #8b949e;
+		font-size: 0.85rem;
+		margin-bottom: 0.8rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.prompt {
+		color: #58a6ff;
+	}
+	.date-tag {
+		color: #3fb950;
+	}
+	.title {
+		font-size: 2.2rem;
+		color: #f0f6fc;
+		margin: 0 0 0.8rem 0;
+		line-height: 1.3;
+	}
+	.description {
+		color: #8b949e;
+		font-size: 1rem;
+		margin: 0;
+		line-height: 1.6;
+	}
+	.hero-image {
+		margin-bottom: 2rem;
+	}
+	.hero-image img {
+		width: 100%;
+		border-radius: 8px;
+		border: 1px solid #30363d;
+	}
+	.markdown-body {
+		color: #c9d1d9;
+		line-height: 1.8;
+		font-size: 0.95rem;
+	}
+	:global(.markdown-body h2) {
+		font-size: 1.5rem;
+		border-bottom: 1px solid #21262d;
+		padding-bottom: 0.4rem;
+		margin-top: 2rem;
+	}
+	:global(.markdown-body h3) {
+		font-size: 1.25rem;
+		margin-top: 1.5rem;
+	}
+	:global(.markdown-body ul, .markdown-body ol) {
+		padding-left: 1.5rem;
+	}
+	:global(.markdown-body li) {
+		margin-bottom: 0.4rem;
+	}
+	:global(.markdown-body blockquote) {
+		border-left: 4px solid #58a6ff;
+		background: #161b22;
+		margin: 1.5rem 0;
+		padding: 0.6rem 1rem;
+		color: #8b949e;
+	}
+</style>
