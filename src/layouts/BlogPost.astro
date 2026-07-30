@@ -62,7 +62,7 @@ const { title, description, pubDate, updatedDate, heroImage, showComments = true
 
 <style>
 	.article-container {
-		max-width: 860px;
+		max-width: 1000px;
 		margin: 0 auto;
 		padding: 2.5rem 1.25rem 0;
 	}
@@ -131,7 +131,7 @@ const { title, description, pubDate, updatedDate, heroImage, showComments = true
 	.markdown-body {
 		color: var(--text);
 		line-height: 1.85;
-		font-size: 0.95rem;
+		font-size: 1rem;
 	}
 
 	.markdown-body :global(h1),
@@ -148,18 +148,8 @@ const { title, description, pubDate, updatedDate, heroImage, showComments = true
 		padding-bottom: 0.45rem;
 	}
 
-	.markdown-body :global(h2)::before {
-		content: "## ";
-		color: var(--green-dim);
-	}
-
 	.markdown-body :global(h3) {
 		font-size: 1.2rem;
-	}
-
-	.markdown-body :global(h3)::before {
-		content: "### ";
-		color: var(--green-dim);
 	}
 
 	.markdown-body :global(p) {
