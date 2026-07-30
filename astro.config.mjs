@@ -1,18 +1,44 @@
-import { defineConfig } from 'astro/config';
+// @ts-check
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
+
 // https://astro.build/config
 export default defineConfig({
-site: 'https://blog.cyrilapp.cn', // 换成你的博客实际最终访问域名
-integrations: [mdx(), sitemap()],
-markdown: {
-shikiConfig: {
-theme: 'one-dark-pro', // 代码高亮主题，如 dracula, github-dark 等
-wrap: true,
-},
-},
-vite: {
-plugins: [tailwindcss()],
-},
+  site: 'https://dxj.dpdns.org', // 这里填你准备绑定的域名
+  integrations: [mdx(), sitemap()],
+  fonts: [
+    {
+      provider: fontProviders.local(),
+      name: 'Atkinson',
+      cssVariable: '--font-atkinson',
+      fallbacks: ['sans-serif'],
+      options: {
+        variants: [
+          {
+            src: ['./src/assets/fonts/atkinson-regular.woff'],
+            weight: 400,
+            style: 'normal',
+            display: 'swap',
+          },
+          {
+            src: ['./src/assets/fonts/atkinson-bold.woff'],
+            weight: 700,
+            style: 'normal',
+            display: 'swap',
+          },
+        ],
+      },
+    },
+  ],
+  markdown: {
+    shikiConfig: {
+      theme: 'one-dark-pro',
+      wrap: true,
+    },
+  },
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });
