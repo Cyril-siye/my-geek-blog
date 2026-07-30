@@ -12,24 +12,291 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>🚀 欢迎来到 Cyril 的技术空间</h1>
-			<p>
-				这里记录关于 <strong>Linux 系统运维</strong>、<strong>后端开发</strong>、<strong>网络架构</strong> 以及各种极客折腾实践。
-			</p>
+		<main class="container">
+			<!-- 终端 Hero 区域 -->
+			<div class="terminal-card">
+				<div class="terminal-header">
+					<span class="dot red"></span>
+					<span class="dot yellow"></span>
+					<span class="dot green"></span>
+					<span class="terminal-title">cyril@ubuntu-server:~</span>
+				</div>
+				<div class="terminal-body">
+					<p class="cmd"><span class="prompt">cyril@stillvoice-node:~$</span> whoami</p>
+					<h1 class="hero-title">Cyril <span class="accent-text">// Full-Stack & System Engineer</span></h1>
+					<p class="hero-desc">
+						热衷于 Linux 系统架构、全栈开发与自动化运维。追求极致的响应速度与极客式的技术沉淀。
+					</p>
+					<div class="status-bar">
+						<span class="status-dot"></span>
+						<span class="status-text">SYSTEM STATUS: ONLINE (Cloudflare Pages Edge)</span>
+					</div>
+				</div>
+			</div>
 
-			<h2>技术栈与环境</h2>
-			<ul>
-				<li><strong>操作系统</strong>: Ubuntu Server 24.04 LTS / Windows 11</li>
-				<li><strong>核心框架</strong>: Astro, Node.js, Flutter</li>
-				<li><strong>部署架构</strong>: Docker, PM2, Cloudflare Pages, Nginx</li>
-			</ul>
+			<!-- 核心技术栈卡片阵列 -->
+			<section class="section">
+				<h2 class="section-title"><span class="terminal-symbol">&gt;</span> CORE STACK</h2>
+				<div class="grid">
+					<div class="card">
+						<div class="card-tag">OS & Infra</div>
+						<h3>Ubuntu & Docker</h3>
+						<p>精通 Linux 系统运维、服务容器化与 PM2 进程守护，保持高可用运行状态。</p>
+					</div>
+					<div class="card">
+						<div class="card-tag">Frontend & App</div>
+						<h3>Astro & Flutter</h3>
+						<p>极致的 SSG 静态渲染与跨平台应用重构，追求原生流畅度。</p>
+					</div>
+					<div class="card">
+						<div class="card-tag">Gateway & Edge</div>
+						<h3>Nginx & Cloudflare</h3>
+						<p>基于 Nginx 动静分离、WebSocket 反向代理、SSL 卸载与 CDN 全球加速。</p>
+					</div>
+				</div>
+			</section>
 
-			<h2>最新动态</h2>
-			<p>
-				查阅 <a href="/blog">博客文章</a> 获取最新的技术笔记与教程。
-			</p>
+			<!-- 快速导航 -->
+			<section class="section">
+				<h2 class="section-title"><span class="terminal-symbol">&gt;</span> LATEST LOGS</h2>
+				<a href="/blog" class="blog-cta">
+					<div class="cta-content">
+						<h3>📖 浏览技术博文</h3>
+						<p>查看关于系统部署、网络隧道、自动化脚本与代码最佳实践的详细记录。</p>
+					</div>
+					<span class="arrow">&rarr;</span>
+				</a>
+			</section>
 		</main>
 		<Footer />
 	</body>
 </html>
+
+<style>
+	:global(body) {
+		background-color: #0d1117 !important;
+		color: #c9d1d9 !important;
+		font-family: ui-monospace, SFMono-Regular, SF Pro Display, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+	}
+
+	:global(header), :global(footer) {
+		background-color: #0d1117 !important;
+		border-color: #21262d !important;
+	}
+
+	:global(header a), :global(footer) {
+		color: #8b949e !important;
+	}
+
+	:global(header a:hover) {
+		color: #58a6ff !important;
+	}
+
+	.container {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem 1rem;
+	}
+
+	/* Terminal Component */
+	.terminal-card {
+		background: #161b22;
+		border: 1px solid #30363d;
+		border-radius: 8px;
+		overflow: hidden;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+		margin-bottom: 2.5rem;
+	}
+
+	.terminal-header {
+		background: #21262d;
+		padding: 0.6rem 1rem;
+		display: flex;
+		align-items: center;
+		border-bottom: 1px solid #30363d;
+	}
+
+	.dot {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		display: inline-block;
+		margin-right: 6px;
+	}
+	.red { background: #ff5f56; }
+	.yellow { background: #ffbd2e; }
+	.green { background: #27c93f; }
+
+	.terminal-title {
+		color: #8b949e;
+		font-size: 0.85rem;
+		margin-left: 0.5rem;
+	}
+
+	.terminal-body {
+		padding: 1.5rem;
+	}
+
+	.cmd {
+		color: #8b949e;
+		font-size: 0.9rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.prompt {
+		color: #58a6ff;
+	}
+
+	.hero-title {
+		font-size: 1.8rem;
+		color: #f0f6fc;
+		margin: 0.5rem 0 1rem 0;
+		font-weight: 700;
+	}
+
+	.accent-text {
+		color: #3fb950;
+		font-size: 1.1rem;
+		font-weight: normal;
+		display: block;
+		margin-top: 0.2rem;
+	}
+
+	.hero-desc {
+		color: #8b949e;
+		line-height: 1.6;
+		margin-bottom: 1.5rem;
+	}
+
+	.status-bar {
+		display: inline-flex;
+		align-items: center;
+		background: rgba(46, 160, 67, 0.15);
+		border: 1px solid rgba(46, 160, 67, 0.4);
+		padding: 0.35rem 0.8rem;
+		border-radius: 20px;
+	}
+
+	.status-dot {
+		width: 8px;
+		height: 8px;
+		background-color: #3fb950;
+		border-radius: 50%;
+		margin-right: 8px;
+		box-shadow: 0 0 8px #3fb950;
+		animation: pulse 2s infinite;
+	}
+
+	.status-text {
+		color: #3fb950;
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.5px;
+	}
+
+	/* Section Styles */
+	.section {
+		margin-bottom: 2.5rem;
+	}
+
+	.section-title {
+		color: #f0f6fc;
+		font-size: 1.1rem;
+		border-bottom: 1px solid #21262d;
+		padding-bottom: 0.5rem;
+		margin-bottom: 1.2rem;
+	}
+
+	.terminal-symbol {
+		color: #58a6ff;
+		margin-right: 0.5rem;
+	}
+
+	/* Grid & Cards */
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 1rem;
+	}
+
+	.card {
+		background: #161b22;
+		border: 1px solid #30363d;
+		border-radius: 6px;
+		padding: 1.2rem;
+		transition: transform 0.2s, border-color 0.2s;
+	}
+
+	.card:hover {
+		transform: translateY(-2px);
+		border-color: #58a6ff;
+	}
+
+	.card-tag {
+		font-size: 0.75rem;
+		color: #58a6ff;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-bottom: 0.4rem;
+	}
+
+	.card h3 {
+		color: #f0f6fc;
+		margin: 0 0 0.5rem 0;
+		font-size: 1.05rem;
+	}
+
+	.card p {
+		color: #8b949e;
+		font-size: 0.85rem;
+		margin: 0;
+		line-height: 1.5;
+	}
+
+	/* Blog CTA Button */
+	.blog-cta {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		background: #161b22;
+		border: 1px solid #30363d;
+		border-radius: 6px;
+		padding: 1.2rem;
+		text-decoration: none;
+		transition: all 0.2s;
+	}
+
+	.blog-cta:hover {
+		border-color: #3fb950;
+		background: #1c2128;
+	}
+
+	.cta-content h3 {
+		color: #f0f6fc;
+		margin: 0 0 0.3rem 0;
+		font-size: 1.05rem;
+	}
+
+	.cta-content p {
+		color: #8b949e;
+		margin: 0;
+		font-size: 0.85rem;
+	}
+
+	.arrow {
+		color: #3fb950;
+		font-size: 1.5rem;
+		font-weight: bold;
+		transition: transform 0.2s;
+	}
+
+	.blog-cta:hover .arrow {
+		transform: translateX(5px);
+	}
+
+	@keyframes pulse {
+		0% { opacity: 1; }
+		50% { opacity: 0.4; }
+		100% { opacity: 1; }
+	}
+</style>
