@@ -1,0 +1,20 @@
+---
+title: '博客重构与 Cloudflare Pages 自动化部署实践'
+description: '记录基于 Astro + Cloudflare Pages 搭建个人极客博客的全过程。'
+pubDate: '2026-03-07'
+heroImage: '../../assets/blog-placeholder-1.jpg'
+---
+
+# 为什么选择 Astro？
+
+Astro 是一个针对内容驱动型网站优化的高性能静态站点生成器 (SSG)，具有以下优势：
+
+* **零 JS 运行时**：默认不向客户端发送多余 JavaScript。
+* **原生 MDX 支持**：可在 Markdown 中直接嵌入前端组件。
+* **部署简单**：配合 GitHub 与 Cloudflare Pages 实现 Push 即部署。
+
+## 部署流程
+
+1. 本地打包校验：`npm run build`
+2. 提交代码至 GitHub 仓库。
+3. Cloudflare Pages 自动构建并分发至 Edge 节点。
