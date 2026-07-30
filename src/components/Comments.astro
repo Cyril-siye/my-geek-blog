@@ -1,0 +1,89 @@
+---
+import { GISCUS } from '../consts';
+---
+
+<section class="comments-section">
+	<div class="term-window">
+		<div class="term-bar">
+			<span class="term-dots"><i></i><i></i><i></i></span>
+			<span class="term-path">cyril@log:~/comments — tail -f discussions.log</span>
+		</div>
+		<div class="term-body comments-body">
+			<p class="comments-hint">
+				<span class="prompt">$</span> giscus --load
+				<span class="text-dim"># 使用 GitHub 账号登录即可发表评论</span>
+			</p>
+			<div id="giscus-container"></div>
+		</div>
+	</div>
+</section>
+
+<script is:inline define:vars={{ GISCUS }}>
+	function loadGiscus() {
+		const container = document.getElementById('giscus-container');
+		if (!container || container.dataset.loaded) return;
+		container.dataset.loaded = 'true';
+
+		const script = document.createElement('script');
+		script.src = 'https://giscus.app/client.js';
+		script.setAttribute('data-repo', GISCUS.repo);
+		script.setAttribute('data-repo-id', GISCUS.repoId);
+		if (GISCUS.category) script.setAttribute('data-category', GISCUS.category);
+		if (GISCUS.categoryId) script.setAttribute('data-category-id', GISCUS.categoryId);
+		script.setAttribute('data-mapping', GISCUS.mapping);
+		script.setAttribute('data-strict', '0');
+		script.setAttribute('data-reactions-enabled', '1');
+		script.setAttribute('data-emit-metadata', '0');
+		script.setAttribute('data-input-position', 'top');
+		script.setAttribute('data-theme', 'transparent_dark');
+		script.setAttribute('data-lang', GISCUS.lang);
+		script.setAttribute('data-loading', 'lazy');
+		script.crossOrigin = 'anonymous';
+		script.async = true;
+		container.appendChild(script);
+	}
+
+	// 滚动到评论区附近时才加载，避免拖慢首屏
+	const observer = new IntersectionObserver(
+		(entries) => {
+			if (entries.some((entry) => entry.isIntersecting)) {
+				loadGiscus();
+				observer.disconnect();
+			}
+		},
+		{ rootMargin: '300px' }
+	);
+
+	const section = document.querySelector('.comments-section');
+	if (section) observer.observe(section);
+</script>
+
+<style>
+	.comments-section {
+		margin-top: 2.5rem;
+	}
+
+	.comments-body {
+		padding: 1.4rem 1.6rem;
+	}
+
+	.comments-hint {
+		font-size: 0.8rem;
+		color: var(--text-faint);
+		margin: 0 0 1.2rem;
+	}
+
+	.prompt {
+		color: var(--green);
+		font-weight: 700;
+	}
+
+	/* Giscus iframe 融合暗色主题 */
+	#giscus-container:empty {
+		display: none;
+	}
+
+	#giscus-container :global(.giscus) {
+		font-family: var(--font-mono);
+	}
+</style>
