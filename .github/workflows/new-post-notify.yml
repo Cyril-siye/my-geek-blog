@@ -1,9 +1,13 @@
-# 新文章自动推送到 Telegram Channel
+# 新文章自动化：Telegram 推送 + giscus 评论讨论预建
 # 触发条件：push 到 main 且 src/content/blog 下有新增文章
-# 所需 Secrets（仓库 Settings → Secrets and variables → Actions）：
+#
+# Job 1 (notify)：推送新文章到 Telegram Channel，需要 Secrets：
 #   TG_BOT_TOKEN — @BotFather 创建的 Bot Token
 #   TG_CHAT_ID   — 目标 Channel/群组 ID（Channel 需把 Bot 加为管理员）
-# 未配置 Secrets 时任务自动跳过，不影响仓库其他流程。
+#   未配置 Secrets 时该 job 自动跳过。
+#
+# Job 2 (precreate-giscus)：为新文章预建 giscus 评论讨论，
+#   使用内置 GITHUB_TOKEN，无需任何配置，开箱即用。
 
 name: New Post Notify
 
@@ -44,4 +48,48 @@ jobs:
               -d "chat_id=${TG_CHAT_ID}" \
               -d "text=${text}" \
               -d "disable_web_page_preview=false"
+          done < /tmp/new_posts.txt
+
+  # 为新文章预建 giscus 评论讨论（使用 Actions 内置 GITHUB_TOKEN，无需配置 secrets）
+  # 这样访客首条评论只是往已有讨论追加，不再触发 giscus 的创建流程
+  precreate-giscus:
+    runs-on: ubuntu-latest
+    permissions:
+      discussions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 为新增文章预建评论讨论
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_ID: R_kgDOTonAeA
+          CATEGORY_ID: DIC_kwDOTonAeM4DCV_T
+        run: |
+          git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'src/content/blog/*.md' 'src/content/blog/*.mdx' \
+            | sed 's|^src/content/blog/||; s|\.mdx\?$||' > /tmp/new_posts.txt
+
+          while read -r slug; do
+            [ -z "$slug" ] && continue
+            title="blog/${slug}/"
+
+            # 查重：已存在同名讨论则跳过
+            search_payload=$(jq -n --arg term "repo:${{ github.repository }} in:title ${title}" \
+              '{query:"query($term:String!){ search(query:$term, type:DISCUSSION, first:1){ discussionCount } }", variables:{term:$term}}')
+            count=$(curl -s -X POST "https://api.github.com/graphql" \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/json" \
+              -d "$search_payload" | jq -r '.data.search.discussionCount // 0')
+            if [ "$count" -gt 0 ]; then
+              echo "已存在，跳过: $title"
+              continue
+            fi
+
+            # 创建讨论
+            create_payload=$(jq -n --arg repo "$REPO_ID" --arg cat "$CATEGORY_ID" --arg t "$title" \
+              '{query:"mutation($repo:ID!,$cat:ID!,$t:String!){ createDiscussion(input:{repositoryId:$repo,categoryId:$cat,title:$t,body:\"本文评论区，欢迎留言交流。\"}){ discussion{ id } } }", variables:{repo:$repo,cat:$cat,t:$t}}')
+            result=$(curl -s -X POST "https://api.github.com/graphql" \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/json" \
+              -d "$create_payload")
+            echo "$title -> $result"
           done < /tmp/new_posts.txt
