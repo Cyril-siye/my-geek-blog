@@ -1,0 +1,47 @@
+# 新文章自动推送到 Telegram Channel
+# 触发条件：push 到 main 且 src/content/blog 下有新增文章
+# 所需 Secrets（仓库 Settings → Secrets and variables → Actions）：
+#   TG_BOT_TOKEN — @BotFather 创建的 Bot Token
+#   TG_CHAT_ID   — 目标 Channel/群组 ID（Channel 需把 Bot 加为管理员）
+# 未配置 Secrets 时任务自动跳过，不影响仓库其他流程。
+
+name: New Post Notify
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/content/blog/**'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.TG_BOT_TOKEN != '' && secrets.TG_CHAT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 找出本次新增的文章
+        id: posts
+        run: |
+          git diff --name-only --diff-filter=A HEAD~1 HEAD -- 'src/content/blog/*.md' 'src/content/blog/*.mdx' \
+            | sed 's|^src/content/blog/||; s|\.mdx\?$||' > /tmp/new_posts.txt
+          echo "count=$(wc -l < /tmp/new_posts.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: 推送新文章到 Telegram
+        if: steps.posts.outputs.count != '0'
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          while read -r slug; do
+            [ -z "$slug" ] && continue
+            file=$(ls "src/content/blog/${slug}.md" "src/content/blog/${slug}.mdx" 2>/dev/null | head -1)
+            title=$(grep -m1 "^title:" "$file" | sed "s/^title: *['\"]\?//; s/['\"]\?$//")
+            text="📝 新文章发布：${title}%0A🔗 https://dxj.dpdns.org/blog/${slug}/"
+            curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              -d "chat_id=${TG_CHAT_ID}" \
+              -d "text=${text}" \
+              -d "disable_web_page_preview=false"
+          done < /tmp/new_posts.txt

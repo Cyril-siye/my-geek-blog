@@ -15,3 +15,12 @@ export const GISCUS = {
 	mapping: 'pathname',
 	lang: 'zh-CN',
 };
+
+// 无追踪流量统计（留空则不注入任何脚本，二者可独立启用）
+// cloudflareToken: Cloudflare Web Analytics 的 beacon token（https://dash.cloudflare.com → Web Analytics）
+// umamiScriptUrl / umamiWebsiteId: 自建或云端 Umami 的脚本地址与 website-id
+export const ANALYTICS = {
+	cloudflareToken: '',
+	umamiScriptUrl: '',
+	umamiWebsiteId: '',
+};

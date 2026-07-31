@@ -1,0 +1,106 @@
+---
+// Mermaid 架构图渲染组件
+// 用法：<MermaidChart chart={`graph TD; A-->B`} /> 或 <MermaidChart>graph TD; A-->B</MermaidChart>
+// 仅在页面包含图表时从 CDN 懒加载 mermaid，主题匹配博客暗色 UI。
+
+interface Props {
+	chart?: string;
+	caption?: string;
+}
+
+const { chart, caption } = Astro.props;
+const slotContent = ((await Astro.slots.render('default')) ?? '').trim();
+const definition = (chart || slotContent).trim();
+---
+
+<figure class="mermaid-chart">
+	<pre class="mermaid-source" data-mermaid-definition={definition}>{definition}</pre>
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<script>
+	// 懒加载 mermaid：只在页面确实包含图表时注入 CDN 脚本
+	const sources = document.querySelectorAll<HTMLElement>('.mermaid-source[data-mermaid-definition]');
+	if (sources.length > 0) {
+		const MERMAID_URL = 'https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.esm.min.mjs';
+		import(/* @vite-ignore */ MERMAID_URL)
+			.then(({ default: mermaid }) => {
+				mermaid.initialize({
+					startOnLoad: false,
+					theme: 'dark',
+					themeVariables: {
+						background: '#0d1016',
+						primaryColor: '#131720',
+						primaryTextColor: '#c6d0dc',
+						primaryBorderColor: '#3fd97f',
+						lineColor: '#7b8794',
+						secondaryColor: '#0a0d12',
+						tertiaryColor: '#131720',
+						fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+					},
+				});
+				sources.forEach(async (el, i) => {
+					const definition = el.dataset.mermaidDefinition || '';
+					try {
+						const { svg } = await mermaid.render(`mermaid-svg-${i}`, definition);
+						const container = document.createElement('div');
+						container.className = 'mermaid-svg';
+						container.innerHTML = svg;
+						el.replaceWith(container);
+					} catch (err) {
+						el.classList.add('mermaid-error');
+						el.textContent = `Mermaid 渲染失败: ${err}`;
+					}
+				});
+			})
+			.catch(() => {
+				sources.forEach((el) => {
+					el.classList.add('mermaid-error');
+					el.textContent = 'Mermaid 加载失败（CDN 不可达），请检查网络。';
+				});
+			});
+	}
+</script>
+
+<style>
+	.mermaid-chart {
+		margin: 1.5rem 0;
+	}
+
+	.mermaid-source,
+	.mermaid-svg {
+		background: var(--bg-inset);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 1.2rem;
+		overflow-x: auto;
+	}
+
+	.mermaid-source {
+		font-size: 0.8rem;
+		color: var(--text-dim);
+		white-space: pre-wrap;
+	}
+
+	.mermaid-svg {
+		display: flex;
+		justify-content: center;
+	}
+
+	.mermaid-svg :global(svg) {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.mermaid-error {
+		color: var(--red);
+		border-color: var(--red);
+	}
+
+	figcaption {
+		margin-top: 0.5rem;
+		font-size: 0.78rem;
+		color: var(--text-faint);
+		text-align: center;
+	}
+</style>

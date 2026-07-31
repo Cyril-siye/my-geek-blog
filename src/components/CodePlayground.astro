@@ -1,0 +1,192 @@
+---
+// 浏览器内可运行的 JS 沙盒（零依赖）
+// 用法：<CodePlayground code={`console.log('hello')`} />
+// 在沙盒化 iframe 中执行代码，捕获 console 输出与错误。
+
+interface Props {
+	code?: string;
+	title?: string;
+}
+
+const { code = "console.log('Hello, playground!');", title = 'playground.js' } = Astro.props;
+const id = `pg-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class="playground" data-playground={id}>
+	<div class="pg-bar">
+		<span class="term-dots"><i></i><i></i><i></i></span>
+		<span class="pg-title">{title}</span>
+		<button type="button" class="pg-run" data-run>▶ 运行</button>
+	</div>
+	<textarea class="pg-editor" data-editor spellcheck="false">{code}</textarea>
+	<pre class="pg-output" data-output><span class="pg-placeholder">// 点击「运行」查看输出</span></pre>
+	<iframe class="pg-sandbox" data-sandbox sandbox="allow-scripts" title="code sandbox"></iframe>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLElement>('[data-playground]').forEach((root) => {
+		const editor = root.querySelector<HTMLTextAreaElement>('[data-editor]')!;
+		const output = root.querySelector<HTMLPreElement>('[data-output]')!;
+		const sandbox = root.querySelector<HTMLIFrameElement>('[data-sandbox]')!;
+		const runBtn = root.querySelector<HTMLButtonElement>('[data-run]')!;
+
+		// 根据行数自适应编辑器高度
+		const fitHeight = () => {
+			editor.style.height = 'auto';
+			editor.style.height = `${Math.min(editor.scrollHeight, 320)}px`;
+		};
+		fitHeight();
+		editor.addEventListener('input', fitHeight);
+
+		const escapeHtml = (s: string) =>
+			s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+		runBtn.addEventListener('click', () => {
+			output.innerHTML = '<span class="pg-running">$ node playground.js ...</span>';
+
+			const handler = (event: MessageEvent) => {
+				if (event.source !== sandbox.contentWindow) return;
+				window.removeEventListener('message', handler);
+				const logs: Array<{ level: string; text: string }> = event.data.logs || [];
+				output.innerHTML = logs.length
+					? logs
+							.map(
+								(l) =>
+									`<span class="pg-log pg-${l.level}">${escapeHtml(l.text)}</span>`
+							)
+							.join('\n')
+					: '<span class="pg-placeholder">// （无输出）</span>';
+			};
+			window.addEventListener('message', handler);
+
+			const userCode = editor.value
+				.replace(/&amp;/g, '&')
+				.replace(/&lt;/g, '<')
+				.replace(/&gt;/g, '>')
+				.replace(/&quot;/g, '"')
+				.replace(/&#039;/g, "'");
+
+			sandbox.srcdoc = `<!doctype html><html><body><script>
+				const logs = [];
+				const push = (level, args) => logs.push({
+					level,
+					text: args.map((a) => {
+						try { return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a); }
+						catch { return String(a); }
+					}).join(' '),
+				});
+				['log', 'info', 'warn', 'error'].forEach((level) => {
+					console[level] = (...args) => push(level, args);
+				});
+				try {
+					${userCode}
+				} catch (err) {
+					push('error', ['Uncaught ' + err]);
+				}
+				parent.postMessage({ logs }, '*');
+			<\/script></body></html>`;
+		});
+	});
+</script>
+
+<style>
+	.playground {
+		margin: 1.5rem 0;
+		background: var(--bg-panel);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		overflow: hidden;
+	}
+
+	.pg-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		padding: 0.55rem 0.9rem;
+		background: var(--bg-elevated);
+		border-bottom: 1px solid var(--border);
+		font-size: 0.75rem;
+		color: var(--text-dim);
+	}
+
+	.term-dots {
+		display: inline-flex;
+		gap: 6px;
+	}
+
+	.term-dots i {
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		display: block;
+	}
+
+	.term-dots i:nth-child(1) { background: #ff5f57; }
+	.term-dots i:nth-child(2) { background: #febc2e; }
+	.term-dots i:nth-child(3) { background: #28c840; }
+
+	.pg-title {
+		flex: 1;
+	}
+
+	.pg-run {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		padding: 0.25rem 0.9rem;
+		background: rgba(63, 217, 127, 0.12);
+		border: 1px solid var(--green-dim);
+		border-radius: 4px;
+		color: var(--green);
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.pg-run:hover {
+		background: rgba(63, 217, 127, 0.22);
+		box-shadow: var(--glow-green);
+	}
+
+	.pg-editor {
+		display: block;
+		width: 100%;
+		min-height: 80px;
+		padding: 0.9rem 1.1rem;
+		background: var(--bg-inset);
+		border: none;
+		border-bottom: 1px solid var(--border);
+		color: var(--text-bright);
+		font-family: var(--font-mono);
+		font-size: 0.85rem;
+		line-height: 1.6;
+		resize: vertical;
+		outline: none;
+	}
+
+	.pg-output {
+		margin: 0;
+		padding: 0.8rem 1.1rem !important;
+		background: #07090c !important;
+		border: none !important;
+		border-left: none !important;
+		border-radius: 0 !important;
+		font-size: 0.82rem;
+		line-height: 1.6;
+		max-height: 240px;
+		overflow-y: auto;
+		box-shadow: none !important;
+	}
+
+	.pg-output :global(.pg-log) {
+		display: block;
+		white-space: pre-wrap;
+	}
+
+	.pg-output :global(.pg-warn) { color: var(--amber); }
+	.pg-output :global(.pg-error) { color: var(--red); }
+	.pg-output :global(.pg-running) { color: var(--text-faint); }
+	.pg-output :global(.pg-placeholder) { color: var(--text-faint); }
+
+	.pg-sandbox {
+		display: none;
+	}
+</style>

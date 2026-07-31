@@ -1,0 +1,180 @@
+---
+// 服务器实时状态小部件
+// 用法：<ServerStatus endpoint="https://your-server.example.com/status.json" />
+// 接口需返回 JSON：{ "uptime": "12d 3h", "load": 0.42, "memUsed": 62, "online": true }
+// 接口不可达时自动降级为 DEMO 模拟数据。
+
+interface Props {
+	endpoint?: string;
+	label?: string;
+}
+
+const { endpoint = '', label = 'ubuntu-server' } = Astro.props;
+---
+
+<div class="server-status" data-endpoint={endpoint}>
+	<div class="ss-header">
+		<span class="status-dot"></span>
+		<span class="ss-label">{label}</span>
+		<span class="ss-mode" data-mode>LIVE</span>
+	</div>
+	<div class="ss-grid">
+		<div class="ss-item">
+			<span class="ss-value" data-field="uptime">--</span>
+			<span class="ss-key">UPTIME</span>
+		</div>
+		<div class="ss-item">
+			<span class="ss-value" data-field="load">--</span>
+			<span class="ss-key">LOAD</span>
+		</div>
+		<div class="ss-item">
+			<span class="ss-value" data-field="mem">--</span>
+			<span class="ss-key">MEM</span>
+		</div>
+	</div>
+	<div class="ss-bar">
+		<div class="ss-bar-fill" data-bar></div>
+	</div>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLElement>('.server-status').forEach(async (root) => {
+		const endpoint = root.dataset.endpoint || '';
+		const modeEl = root.querySelector<HTMLElement>('[data-mode]')!;
+		const uptimeEl = root.querySelector<HTMLElement>('[data-field="uptime"]')!;
+		const loadEl = root.querySelector<HTMLElement>('[data-field="load"]')!;
+		const memEl = root.querySelector<HTMLElement>('[data-field="mem"]')!;
+		const barEl = root.querySelector<HTMLElement>('[data-bar]')!;
+
+		interface Status {
+			uptime: string;
+			load: number;
+			memUsed: number; // 百分比 0-100
+			online: boolean;
+		}
+
+		const render = (s: Status, demo: boolean) => {
+			uptimeEl.textContent = s.uptime;
+			loadEl.textContent = s.load.toFixed(2);
+			memEl.textContent = `${s.memUsed}%`;
+			barEl.style.width = `${s.memUsed}%`;
+			modeEl.textContent = demo ? 'DEMO' : 'LIVE';
+			modeEl.classList.toggle('demo', demo);
+			root.querySelector('.status-dot')?.classList.toggle('offline', !s.online);
+		};
+
+		// 模拟数据（接口不可达时的降级展示）
+		const demoData = (): Status => ({
+			uptime: `${Math.floor(Math.random() * 30 + 1)}d ${Math.floor(Math.random() * 24)}h`,
+			load: Math.random() * 1.5,
+			memUsed: Math.floor(Math.random() * 40 + 30),
+			online: true,
+		});
+
+		if (!endpoint) {
+			render(demoData(), true);
+			setInterval(() => render(demoData(), true), 5000);
+			return;
+		}
+
+		const fetchStatus = async () => {
+			try {
+				const controller = new AbortController();
+				const timer = setTimeout(() => controller.abort(), 5000);
+				const res = await fetch(endpoint, { signal: controller.signal });
+				clearTimeout(timer);
+				if (!res.ok) throw new Error(String(res.status));
+				render((await res.json()) as Status, false);
+			} catch {
+				render(demoData(), true);
+			}
+		};
+
+		await fetchStatus();
+		setInterval(fetchStatus, 15000);
+	});
+</script>
+
+<style>
+	.server-status {
+		margin: 1.5rem 0;
+		background: var(--bg-panel);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 1rem 1.2rem;
+		max-width: 420px;
+	}
+
+	.ss-header {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-bottom: 0.9rem;
+		font-size: 0.8rem;
+	}
+
+	.ss-label {
+		color: var(--text-bright);
+		font-weight: 700;
+		flex: 1;
+	}
+
+	.ss-mode {
+		font-size: 0.68rem;
+		letter-spacing: 0.1em;
+		padding: 0.15rem 0.5rem;
+		border-radius: 3px;
+		background: rgba(63, 217, 127, 0.12);
+		color: var(--green);
+		border: 1px solid var(--green-dim);
+	}
+
+	.ss-mode.demo {
+		background: rgba(229, 181, 103, 0.12);
+		color: var(--amber);
+		border-color: var(--amber);
+	}
+
+	.status-dot.offline {
+		background: var(--red);
+		box-shadow: 0 0 6px rgba(242, 109, 109, 0.8);
+	}
+
+	.ss-grid {
+		display: flex;
+		gap: 1.8rem;
+		margin-bottom: 0.8rem;
+	}
+
+	.ss-item {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.ss-value {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--green);
+	}
+
+	.ss-key {
+		font-size: 0.65rem;
+		letter-spacing: 0.14em;
+		color: var(--text-faint);
+	}
+
+	.ss-bar {
+		height: 5px;
+		background: var(--bg-inset);
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.ss-bar-fill {
+		height: 100%;
+		width: 0;
+		background: linear-gradient(90deg, var(--green-dim), var(--green));
+		border-radius: 3px;
+		transition: width 0.6s ease;
+	}
+</style>

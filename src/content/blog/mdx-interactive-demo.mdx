@@ -1,0 +1,164 @@
+---
+title: '让文章活起来：MDX 交互组件实战（沙盒 / 状态件 / Mermaid）'
+description: '利用 Astro 原生支持的 MDX，把可运行的代码沙盒、实时服务器状态件、Mermaid 架构图直接嵌入博文。'
+pubDate: '2026-08-03'
+heroImage: '../../assets/blog-placeholder-1.jpg'
+---
+
+import CodePlayground from '../../components/CodePlayground.astro';
+import ServerStatus from '../../components/ServerStatus.astro';
+import MermaidChart from '../../components/MermaidChart.astro';
+
+写技术教程最尴尬的场景是：读者看着文章里的代码和截图频频点头，真到自己动手时却无从下手，大多数人就流失在「复制到本地跑一遍」这一步。Astro 原生支持的 MDX 让文章不必只是静态图文——代码可以直接在页面里运行，服务器状态实时跳动，架构图随暗色主题渲染。本文用本站自带的三个组件做一次完整实战：先看现场效果，再拆实现原理，最后总结复用方式。
+
+## 从 Markdown 到 MDX
+
+MDX 可以简单理解为「Markdown + JSX」：正文仍然是熟悉的标题、列表、代码块，但你可以在任意位置 import 一个 Astro 组件并直接插入页面。本站在 astro.config.mjs 中注册了官方的 @astrojs/mdx 集成，内容集合的 glob 加载器（见 src/content.config.ts）同时匹配 .md 与 .mdx 两种后缀，因此把文章后缀改成 .mdx 即可解锁组件能力，不需要额外配置。
+
+用法上只需在 frontmatter 之后加几行 import：
+
+```mdx
+import CodePlayground from '../../components/CodePlayground.astro';
+import ServerStatus from '../../components/ServerStatus.astro';
+import MermaidChart from '../../components/MermaidChart.astro';
+```
+
+什么时候该用哪种格式？我的经验是：
+
+- 纯文字、截图、代码片段的「静态稿」用 .md，语法最简单，也永远不会踩到 JSX 的坑；
+- 需要在文中嵌入可交互元素时再用 .mdx，但要记住一条铁律：正文里不能出现裸露的大括号。MDX 会把大括号当作 JSX 表达式去解析，编译直接报错——大括号只允许出现在围栏代码块或 JSX 表达式内部。
+
+> 如果把旧文从 .md 迁移到 .mdx，全文搜索一遍大括号是最容易被忽略、也最容易翻车的一步。
+
+## 交互式代码沙盒
+
+讲 JavaScript 的文章里贴一段代码，读者想验证某个改法对不对，传统做法只能复制出去自己跑。把「运行」按钮直接放进文章里，体验完全不同。下面就是本站的 CodePlayground 组件，你可以直接改代码，然后点「运行」看输出：
+
+<CodePlayground code={`const tools = ['Astro', 'MDX', 'TypeScript'];
+tools.forEach((name, i) => {
+  console.log((i + 1) + '. ' + name);
+});
+console.log({ ssg: true, framework: 'Astro' });
+console.warn('改改代码，再点一次运行试试');`} title="demo.js" />
+
+对照 src/components/CodePlayground.astro，实现原理分三步：
+
+1. 组件渲染一个 textarea 作为编辑器，外加一个隐藏的 iframe。iframe 带有 sandbox 属性且只授予 allow-scripts：允许执行脚本，但不给同源权限，读者输入的代码摸不到父页面的 DOM 与 Cookie。
+2. 点击「运行」时，脚本把编辑器内容注入 iframe 的 srcdoc。srcdoc 里先重写 console 的 log / info / warn / error 四个方法，把参数序列化后收集进数组，再用 try/catch 包裹用户代码，最后通过 postMessage 把日志发回父页面。
+3. 父页面校验 event.source 确实来自这个沙盒窗口，对文本做 HTML 转义后逐条渲染到输出区。
+
+核心逻辑精简如下：
+
+```javascript
+// 沙盒核心（精简版，完整实现见 src/components/CodePlayground.astro）
+sandbox.srcdoc = `<!doctype html><html><body><script>
+  const logs = [];
+  ['log', 'info', 'warn', 'error'].forEach((level) => {
+    console[level] = (...args) => logs.push({ level, text: args.join(' ') });
+  });
+  try {
+    // 这里注入读者输入的代码
+  } catch (err) {
+    logs.push({ level: 'error', text: 'Uncaught ' + err });
+  }
+  parent.postMessage({ logs }, '*');
+<\/script></body></html>`;
+```
+
+验证方法与常见坑：
+
+- 把示例里的 console.log 改成 console.error，输出会以红色渲染，说明错误捕获通道也在工作；
+- 日志是在用户代码同步执行完后一次性发回的，所以 setTimeout 或 Promise 回调里的打印可能来不及被收集，演示异步代码时要有心理预期；
+- 打印对象时组件会自动 JSON 序列化并美化缩进，但循环引用的对象会降级为普通字符串；
+- 编辑器是纯文本 textarea，没有语法高亮——它的定位是「能跑」，不是 IDE。
+
+## 实时服务器状态小部件
+
+在折腾记录或「关于」页里展示自己服务器的运行状态，比贴一张静态截图有说服力得多。下面就是 ServerStatus 组件——当前没有配置真实接口，所以右上角徽标显示 DEMO，每 5 秒生成一组模拟数据：
+
+<ServerStatus />
+
+组件与后端之间的约定非常轻量，接口只需返回这样的 JSON：
+
+```json
+{
+  "uptime": "12d 3h",
+  "load": 0.42,
+  "memUsed": 62,
+  "online": true
+}
+```
+
+四个字段各司其职：uptime 是运行时长字符串，load 是系统负载数值，memUsed 是内存占用百分比（0 到 100，同时驱动下方进度条），online 表示在线状态，为 false 时状态灯变红。
+
+在自己的服务器上暴露这个接口，最省事的方案是 shell 脚本加 cron——不需要常驻进程，nginx 直接分发静态文件：
+
+```bash
+#!/usr/bin/env bash
+# /usr/local/bin/gen-status.sh：生成 /var/www/status/status.json
+set -euo pipefail
+
+OUT=/var/www/status/status.json
+UPTIME=$(uptime -p | sed 's/^up //')
+LOAD=$(awk '{print $1}' /proc/loadavg)
+MEM=$(free | awk '/^Mem:/ {printf "%d", $3 / $2 * 100}')
+
+printf '{"uptime":"%s","load":%s,"memUsed":%d,"online":true}\n' \
+  "$UPTIME" "$LOAD" "$MEM" > "$OUT"
+```
+
+再让 cron 每分钟执行一次：
+
+```bash
+* * * * * /usr/local/bin/gen-status.sh
+```
+
+nginx 侧只暴露这一个文件。注意博客部署在 Cloudflare Pages、接口在自己的服务器上，属于跨域请求，必须显式放行 CORS：
+
+```nginx
+location = /status.json {
+    root /var/www/status;
+    default_type application/json;
+    add_header Access-Control-Allow-Origin * always;
+}
+```
+
+> 缺少 Access-Control-Allow-Origin 是最常见的翻车点：用 curl 测试一切正常，但浏览器里的 fetch 会被同源策略拦下，页面永远停留在 DEMO。
+
+接入只需传一个 endpoint prop，label 可选（默认显示 ubuntu-server）：
+
+```mdx
+<ServerStatus endpoint="https://status.example.com/status.json" label="home-server" />
+```
+
+验证方法：打开浏览器 DevTools 的 Network 面板，组件会每 15 秒请求一次接口，徽标变为 LIVE；把接口暂时停掉，页面会在 5 秒超时后自动降级回 DEMO 模拟数据，而不是白屏报错。
+
+## Mermaid 动态架构图
+
+用文字描述「用户请求先到 CDN，缓存未命中再回源，经 Nginx 反代到应用服务」很费劲，一张拓扑图三秒就能看懂。手画截图的问题是：架构一改就得重画，而且在暗色主题下常常是一块刺眼的白底。MermaidChart 组件直接用文本定义渲染：
+
+<MermaidChart chart={`graph LR
+    U[用户] --> CDN[Cloudflare CDN]
+    CDN -->|回源| NGX[Nginx 反向代理]
+    NGX --> APP[源站服务]`} caption="本站请求链路：用户 → Cloudflare CDN → Nginx → 源站服务" />
+
+对照 src/components/MermaidChart.astro，有两个设计值得说明：
+
+1. **CDN 懒加载。** 页面脚本先检查是否存在图表元素，有才从 jsdelivr 动态 import mermaid 11.6.0 的 ESM 构建；没有图表的页面完全不发这个请求，不浪费几百 KB 流量，符合 Astro 的性能洁癖。
+2. **暗色主题适配。** 初始化时 theme 设为 dark，并通过 themeVariables 把背景、节点底色、绿色边框、等宽字体逐项对齐博客配色，渲染结果不会是一块突兀的白底图。
+
+用法有两种：把图表定义传给 chart prop，或者直接写在组件标签内部作为 slot 内容；caption prop 可以追加一行图注。渲染失败（定义语法错误或 CDN 不可达）时组件会显示红色错误提示，而不是静默空白。
+
+> 常见坑：Mermaid 的菱形判断节点等语法本身就含有大括号。在 .mdx 里建议统一用 chart prop 加模板字符串的方式传入定义，让大括号待在 JSX 表达式里，避免被 MDX 当作表达式解析而编译报错。
+
+## 小结
+
+三个组件都放在 src/components/ 目录下，文章里 import 即用，互不依赖：
+
+| 组件 | 复用方式 | 关键 props | 典型场景 |
+| :--- | :--- | :--- | :--- |
+| CodePlayground | 传 code 字符串 | code、title | JS 教程里让读者现场改代码、点运行 |
+| ServerStatus | 传 endpoint 指向自建 JSON 接口 | endpoint、label | 展示服务器在线状态、负载与内存 |
+| MermaidChart | chart prop 或直接写在标签内 | chart、caption | 架构拓扑、流程图、时序图 |
+
+原则很简单：纯文字稿继续用 .md，需要读者动手或看实时数据时再升级 .mdx。组件做好一次，之后的每篇文章都能一句话复用——这正是把博客建在 Astro 之上的复利。

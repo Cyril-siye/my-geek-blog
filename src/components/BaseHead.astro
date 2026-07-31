@@ -4,7 +4,7 @@
 import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
-import { SITE_TITLE } from '../consts';
+import { SITE_TITLE, ANALYTICS } from '../consts';
 
 interface Props {
 	title: string;
@@ -49,3 +49,19 @@ const { title, description, image = FallbackImage } = Astro.props;
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
+
+<!-- Privacy-First Analytics（在 src/consts.ts 的 ANALYTICS 中填入配置后启用） -->
+{
+	ANALYTICS.cloudflareToken && (
+		<script
+			defer
+			src="https://static.cloudflareinsights.com/beacon.min.js"
+			data-cf-beacon={JSON.stringify({ token: ANALYTICS.cloudflareToken })}
+		/>
+	)
+}
+{
+	ANALYTICS.umamiScriptUrl && ANALYTICS.umamiWebsiteId && (
+		<script defer src={ANALYTICS.umamiScriptUrl} data-website-id={ANALYTICS.umamiWebsiteId} />
+	)
+}
