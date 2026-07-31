@@ -5,26 +5,41 @@ import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { SITE_TITLE } from '../../consts';
+import { tagSlug } from '../../utils/tags';
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-);
+export async function getStaticPaths() {
+	const posts = await getCollection('blog');
+	const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+	return tags.map((tag) => ({
+		params: { tag: tagSlug(tag) },
+		props: {
+			tag,
+			posts: posts
+				.filter((post) => post.data.tags.includes(tag))
+				.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+		},
+	}));
+}
+
+const { tag, posts } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<BaseHead title={`Blog | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<BaseHead title={`#${tag} | ${SITE_TITLE}`} description={`标签「${tag}」下的全部文章`} />
 	</head>
 	<body>
 		<Header />
 		<main class="container fade-up">
 			<header class="page-header">
 				<h1 class="page-title">
-					<span class="prompt">cyril@log:~$</span> ls -lh ~/logs/
+					<span class="prompt">cyril@log:~$</span> grep -r "{tag}" ~/logs/
 				</h1>
-				<p class="subtitle">共 {posts.length} 篇工程日志 — 技术沉淀与系统实践存档。</p>
+				<p class="subtitle">
+					命中 {posts.length} 篇日志 · <a href="/tags/">← 返回标签云</a>
+				</p>
 			</header>
 
 			<div class="post-grid">
@@ -45,12 +60,11 @@ const posts = (await getCollection('blog')).sort(
 									{post.data.description && <p class="card-desc">{post.data.description}</p>}
 									{post.data.tags.length > 0 && (
 										<span class="tag-list card-tags">
-											{post.data.tags.map((tag) => (
-												<span class="tag">{tag}</span>
+											{post.data.tags.map((t) => (
+												<span class="tag">{t}</span>
 											))}
 										</span>
 									)}
-									<span class="card-read">$ cat → 阅读全文</span>
 								</div>
 							</a>
 						</article>
@@ -116,7 +130,6 @@ const posts = (await getCollection('blog')).sort(
 	}
 
 	.card-tags {
-		display: flex;
 		margin-top: 0.8rem;
 	}
 </style>

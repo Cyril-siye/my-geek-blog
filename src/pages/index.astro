@@ -84,6 +84,13 @@ const posts = (await getCollection('blog')).sort(
 										<span class="card-date">[<FormattedDate date={post.data.pubDate} />]</span>
 										<h3 class="card-title">{post.data.title}</h3>
 										{post.data.description && <p class="card-desc">{post.data.description}</p>}
+										{post.data.tags.length > 0 && (
+											<span class="tag-list card-tags">
+												{post.data.tags.map((tag) => (
+													<span class="tag">{tag}</span>
+												))}
+											</span>
+										)}
 										<span class="card-read">$ cat → 阅读全文</span>
 									</div>
 								</a>
@@ -221,5 +228,10 @@ const posts = (await getCollection('blog')).sort(
 
 	.card-body {
 		padding: 1.1rem 1.25rem 1.25rem;
+	}
+
+	.card-tags {
+		display: flex;
+		margin-top: 0.8rem;
 	}
 </style>

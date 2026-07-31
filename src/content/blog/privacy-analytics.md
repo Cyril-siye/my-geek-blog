@@ -2,6 +2,7 @@
 title: '无追踪流量统计实战：Cloudflare Web Analytics 与自建 Umami'
 description: '不用 Google Analytics，用 Cloudflare Web Analytics 和自建 Umami 获得不收集隐私、不触发 Cookie 弹窗的访问统计。'
 pubDate: '2026-08-04'
+tags: ['博客玩法', 'Cloudflare', '自托管']
 heroImage: '../../assets/blog-placeholder-4.jpg'
 ---
 

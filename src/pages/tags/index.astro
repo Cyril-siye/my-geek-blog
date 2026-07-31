@@ -1,0 +1,109 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { tagSlug } from '../../utils/tags';
+
+const posts = await getCollection('blog');
+
+// 统计每个标签的文章数
+const tagCount = new Map<string, number>();
+for (const post of posts) {
+	for (const tag of post.data.tags) {
+		tagCount.set(tag, (tagCount.get(tag) ?? 0) + 1);
+	}
+}
+const tags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]);
+const maxCount = Math.max(...tags.map(([, n]) => n), 1);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`Tags | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main class="container fade-up">
+			<header class="page-header">
+				<h1 class="page-title">
+					<span class="prompt">cyril@log:~$</span> ls ~/tags/
+				</h1>
+				<p class="subtitle">共 {tags.length} 个标签 · {posts.length} 篇日志。</p>
+			</header>
+
+			<div class="term-window">
+				<div class="term-bar">
+					<span class="term-dots"><i></i><i></i><i></i></span>
+					<span class="term-path">cyril@log:~/tags — tree</span>
+				</div>
+				<div class="term-body tag-cloud">
+					{
+						tags.map(([tag, count]) => (
+							<a
+								href={`/tags/${tagSlug(tag)}/`}
+								class="tag cloud-tag"
+								style={`font-size: ${0.8 + (count / maxCount) * 0.45}rem;`}
+							>
+								{tag}
+								<span class="tag-count">×{count}</span>
+							</a>
+						))
+					}
+				</div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.container {
+		max-width: var(--max-width);
+		margin: 0 auto;
+		padding: 2.5rem 1.25rem 0;
+	}
+
+	.page-header {
+		margin-bottom: 2.2rem;
+		padding-bottom: 1.2rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.page-title {
+		font-size: 1.4rem;
+		font-weight: 400;
+		margin: 0 0 0.5rem;
+	}
+
+	.prompt {
+		color: var(--green);
+		font-weight: 700;
+	}
+
+	.subtitle {
+		color: var(--text-dim);
+		font-size: 0.85rem;
+		margin: 0;
+	}
+
+	.tag-cloud {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.7rem;
+		align-items: baseline;
+		padding: 1.6rem 1.8rem;
+	}
+
+	.cloud-tag {
+		padding: 0.25rem 0.8rem;
+	}
+
+	.tag-count {
+		color: var(--text-faint);
+		font-size: 0.7em;
+		margin-left: 0.25rem;
+	}
+</style>

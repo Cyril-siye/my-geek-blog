@@ -2,6 +2,7 @@
 title: 'Cloudflare 源站保护实战：只允许 CDN 回源，堵住直连攻击'
 description: '攻击者扫到源站 IP 就能绕过 Cloudflare 直连攻击，本文用防火墙白名单 + Nginx real-ip + Authenticated Origin Pull 三层手段锁死源站。'
 pubDate: '2026-08-02'
+tags: ['安全加固', 'Cloudflare', 'Nginx']
 heroImage: '../../assets/blog-placeholder-5.jpg'
 ---
 

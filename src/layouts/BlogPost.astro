@@ -6,10 +6,11 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Comments from '../components/Comments.astro';
+import { tagSlug } from '../utils/tags';
 
 type Props = CollectionEntry<'blog'>['data'] & { showComments?: boolean };
 
-const { title, description, pubDate, updatedDate, heroImage, showComments = true } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, tags = [], showComments = true } = Astro.props;
 ---
 
 <!doctype html>
@@ -44,6 +45,17 @@ const { title, description, pubDate, updatedDate, heroImage, showComments = true
 						</div>
 						<h1 class="title">{title}</h1>
 						{description && <p class="description">{description}</p>}
+						{
+							tags.length > 0 && (
+								<div class="tag-list article-tags">
+									{tags.map((tag) => (
+										<a class="tag" href={`/tags/${tagSlug(tag)}/`}>
+											{tag}
+										</a>
+									))}
+								</div>
+							)
+						}
 					</header>
 
 					{heroImage && <div class="hero-image"><Image width={1020} height={510} src={heroImage} alt="" /></div>}
@@ -115,6 +127,10 @@ const { title, description, pubDate, updatedDate, heroImage, showComments = true
 		font-size: 0.95rem;
 		margin: 0;
 		line-height: 1.7;
+	}
+
+	.article-tags {
+		margin-top: 1rem;
 	}
 
 	.hero-image {

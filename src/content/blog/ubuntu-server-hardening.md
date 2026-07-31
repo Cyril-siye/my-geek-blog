@@ -2,6 +2,7 @@
 title: 'Ubuntu Server 24.04 初始安全加固清单：从裸机到可用'
 description: '新装 Ubuntu Server 后必做的安全加固步骤：SSH 密钥登录、禁用 root、UFW 防火墙、fail2ban 与自动安全更新。'
 pubDate: '2026-07-31'
+tags: ['安全加固', 'Linux', 'SSH']
 heroImage: '../../assets/blog-placeholder-2.jpg'
 ---
 

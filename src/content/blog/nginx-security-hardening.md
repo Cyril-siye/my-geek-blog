@@ -2,6 +2,7 @@
 title: 'Nginx 反向代理安全加固实战：响应头、限流与 TLS'
 description: '给面向公网的 Nginx 反代加上安全响应头、请求限流和现代 TLS 配置，附完整可复用配置片段。'
 pubDate: '2026-08-01'
+tags: ['安全加固', 'Nginx', 'TLS']
 heroImage: '../../assets/blog-placeholder-4.jpg'
 ---
 

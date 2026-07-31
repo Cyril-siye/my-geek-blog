@@ -2,6 +2,7 @@
 title: '自动化内容管道：Obsidian 一键发布 + 新文章自动推送 Telegram'
 description: '用 Obsidian Git 插件实现笔记即写即发，Cloudflare Pages 自动构建，GitHub Actions 把新文章推送到 Telegram Channel。'
 pubDate: '2026-08-05'
+tags: ['博客玩法', '自动化', 'GitHub Actions']
 heroImage: '../../assets/blog-placeholder-2.jpg'
 ---
 
