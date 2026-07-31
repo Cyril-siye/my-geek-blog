@@ -1,0 +1,270 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const feedUrl = new URL('rss.xml', Astro.site).href;
+const encodedFeedUrl = encodeURIComponent(feedUrl);
+// 本地阅读器协议（feed:// 后不带协议头）
+const feedProtocolUrl = feedUrl.replace(/^https?:\/\//, 'feed://');
+
+const readers = [
+	{
+		name: 'Follow',
+		desc: '免费 · 全平台 · 推荐',
+		href: `follow://add?url=${encodedFeedUrl}`,
+		primary: true,
+	},
+	{
+		name: 'Feedly',
+		desc: '网页版免安装',
+		href: `https://feedly.com/i/subscription/feed/${encodedFeedUrl}`,
+		primary: false,
+	},
+	{
+		name: 'Inoreader',
+		desc: '功能强大',
+		href: `https://www.inoreader.com/?add_feed=${encodedFeedUrl}`,
+		primary: false,
+	},
+	{
+		name: '本地阅读器 App',
+		desc: 'NetNewsWire 等',
+		href: feedProtocolUrl,
+		primary: false,
+	},
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={`订阅 | ${SITE_TITLE}`} description="订阅 Cyril's Geek Blog：新文章自动推送，不用每天刷网站。" />
+	</head>
+	<body>
+		<Header />
+		<main class="container fade-up">
+			<div class="term-window">
+				<div class="term-bar">
+					<span class="term-dots"><i></i><i></i><i></i></span>
+					<span class="term-path">cyril@log:~/subscribe — ./subscribe.sh</span>
+				</div>
+				<div class="term-body subscribe-body">
+					<h1 class="title"><span class="prompt">$</span> subscribe --this-blog</h1>
+
+					<p class="intro">
+						订阅 = 关注。订阅后每篇新文章都会<strong>自动推送</strong>到你的阅读器，
+						不用每天打开网站刷更新。
+					</p>
+
+					<h2 class="section"><span class="text-green">1.</span> 复制订阅地址</h2>
+					<p class="hint">粘贴到任何 RSS 阅读器即可：</p>
+					<div class="feed-row">
+						<code class="feed-url" id="feed-url">{feedUrl}</code>
+						<button type="button" class="btn primary" id="copy-btn">复制地址</button>
+					</div>
+
+					<h2 class="section"><span class="text-green">2.</span> 或一键添加到阅读器</h2>
+					<div class="reader-grid">
+						{
+							readers.map((r) => (
+								<a
+									href={r.href}
+									target="_blank"
+									rel="noopener noreferrer"
+									class:list={['reader-btn', { primary: r.primary }]}
+								>
+									<span class="reader-name">{r.name}</span>
+									<span class="reader-desc">{r.desc}</span>
+								</a>
+							))
+						}
+					</div>
+
+					<blockquote class="note">
+						<strong>没有阅读器？</strong>推荐 <a href="https://follow.is" target="_blank" rel="noopener">Follow</a>（免费、手机和电脑都能用）
+						或 <a href="https://feedly.com" target="_blank" rel="noopener">Feedly</a>（打开网页就能用）。
+						注册后回到本页点对应按钮即可。
+					</blockquote>
+
+					<p class="raw-link">
+						高级用户原始订阅源：<a href="/rss.xml">/rss.xml</a>
+					</p>
+				</div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<script>
+	const btn = document.getElementById('copy-btn');
+	const feedUrl = document.getElementById('feed-url')?.textContent?.trim() ?? '';
+	const originalText = btn?.textContent ?? '';
+
+	async function copyText(text: string): Promise<boolean> {
+		try {
+			await navigator.clipboard.writeText(text);
+			return true;
+		} catch {
+			// 降级方案：部分浏览器/非安全上下文禁用 clipboard API
+			const ta = document.createElement('textarea');
+			ta.value = text;
+			ta.style.position = 'fixed';
+			ta.style.opacity = '0';
+			document.body.appendChild(ta);
+			ta.select();
+			try {
+				return document.execCommand('copy');
+			} catch {
+				return false;
+			} finally {
+				document.body.removeChild(ta);
+			}
+		}
+	}
+
+	btn?.addEventListener('click', async () => {
+		const ok = await copyText(feedUrl);
+		btn.textContent = ok ? '✓ 已复制' : '复制失败，请手动选择';
+		btn.classList.add('copied');
+		setTimeout(() => {
+			btn.textContent = originalText;
+			btn.classList.remove('copied');
+		}, 2000);
+	});
+</script>
+
+<style>
+	.container {
+		max-width: 820px;
+		margin: 0 auto;
+		padding: 2.5rem 1.25rem 0;
+	}
+
+	.subscribe-body {
+		padding: 2.2rem 2.4rem;
+	}
+
+	.title {
+		font-size: 1.5rem;
+		margin: 0 0 1.2rem;
+	}
+
+	.prompt {
+		color: var(--green);
+	}
+
+	.intro {
+		color: var(--text-dim);
+		font-size: 0.95rem;
+		line-height: 1.8;
+		margin: 0 0 2rem;
+		padding-bottom: 1.5rem;
+		border-bottom: 1px dashed var(--border-bright);
+	}
+
+	.intro strong {
+		color: var(--green);
+	}
+
+	.section {
+		font-size: 1.05rem;
+		margin: 1.8rem 0 0.6rem;
+	}
+
+	.hint {
+		color: var(--text-dim);
+		font-size: 0.85rem;
+		margin: 0 0 0.8rem;
+	}
+
+	.feed-row {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+		flex-wrap: wrap;
+	}
+
+	.feed-url {
+		flex: 1;
+		min-width: 260px;
+		padding: 0.6rem 0.9rem;
+		font-size: 0.82rem;
+		word-break: break-all;
+	}
+
+	.btn.copied {
+		border-color: var(--green);
+		background: rgba(63, 217, 127, 0.2);
+	}
+
+	.reader-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+		gap: 0.9rem;
+		margin-top: 0.9rem;
+	}
+
+	.reader-btn {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		padding: 0.9rem 1rem;
+		background: var(--bg-elevated);
+		border: 1px solid var(--border-bright);
+		border-radius: var(--radius);
+		transition: all 0.15s ease;
+	}
+
+	.reader-btn:hover {
+		border-color: var(--green-dim);
+		box-shadow: var(--glow-green);
+		text-shadow: none;
+		transform: translateY(-2px);
+	}
+
+	.reader-btn.primary {
+		border-color: var(--green-dim);
+		background: rgba(63, 217, 127, 0.08);
+	}
+
+	.reader-name {
+		color: var(--text-bright);
+		font-weight: 700;
+		font-size: 0.9rem;
+	}
+
+	.reader-btn.primary .reader-name {
+		color: var(--green);
+	}
+
+	.reader-desc {
+		color: var(--text-faint);
+		font-size: 0.72rem;
+	}
+
+	.note {
+		margin: 2rem 0 0;
+		padding: 0.8rem 1.1rem;
+		border-left: 3px solid var(--green-dim);
+		background: rgba(63, 217, 127, 0.05);
+		border-radius: 0 var(--radius) var(--radius) 0;
+		color: var(--text-dim);
+		font-size: 0.85rem;
+		line-height: 1.7;
+	}
+
+	.raw-link {
+		margin: 1.6rem 0 0;
+		font-size: 0.78rem;
+		color: var(--text-faint);
+	}
+
+	@media (max-width: 720px) {
+		.subscribe-body {
+			padding: 1.5rem 1.2rem;
+		}
+	}
+</style>
