@@ -4,7 +4,7 @@
 # Job 1 (notify)：推送新文章到 Telegram Channel，需要 Secrets：
 #   TG_BOT_TOKEN — @BotFather 创建的 Bot Token
 #   TG_CHAT_ID   — 目标 Channel/群组 ID（Channel 需把 Bot 加为管理员）
-#   未配置 Secrets 时该 job 自动跳过。
+#   未配置 Secrets 时推送 step 自动跳过（secrets 不能用于 job 级 if，故经 env 在 step 级判断）。
 #
 # Job 2 (precreate-giscus)：为新文章预建 giscus 评论讨论，
 #   使用内置 GITHUB_TOKEN，无需任何配置，开箱即用。
@@ -20,7 +20,9 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-    if: ${{ secrets.TG_BOT_TOKEN != '' && secrets.TG_CHAT_ID != '' }}
+    env:
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,10 +36,8 @@ jobs:
           echo "count=$(wc -l < /tmp/new_posts.txt)" >> "$GITHUB_OUTPUT"
 
       - name: 推送新文章到 Telegram
-        if: steps.posts.outputs.count != '0'
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        # 未配置 secrets 时本 step 自动跳过（secrets 不能用于 job 级 if，故在 step 级判断 env）
+        if: steps.posts.outputs.count != '0' && env.TG_BOT_TOKEN != '' && env.TG_CHAT_ID != ''
         run: |
           while read -r slug; do
             [ -z "$slug" ] && continue
